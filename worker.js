@@ -50,12 +50,7 @@ function getProductJsonUrls(requestUrl) {
 async function fetchProduct(productJsonUrl) {
   validateProductJsonUrl(productJsonUrl);
 
-  const response = await fetch(productJsonUrl, {
-    method: "GET",
-    headers: {
-      accept: "application/json",
-    },
-  });
+  const response = await fetchShopifyProductJson(productJsonUrl);
 
   if (!response.ok) {
     throw new Error(
@@ -83,6 +78,44 @@ async function fetchProduct(productJsonUrl) {
     imageUrl,
     productLink: buildProductLink(productJsonUrl, product),
   };
+}
+
+async function fetchShopifyProductJson(productJsonUrl) {
+  const browserUrl = new URL(productJsonUrl);
+  const attempts = [
+    {
+      accept: "application/json",
+    },
+    {
+      accept: "application/json,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "accept-language": "de-DE,de;q=0.9,en;q=0.8",
+      referer: `${browserUrl.origin}/`,
+      "user-agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    },
+  ];
+
+  let lastResponse = null;
+
+  for (const headers of attempts) {
+    const response = await fetch(productJsonUrl, {
+      method: "GET",
+      redirect: "follow",
+      headers,
+    });
+
+    if (response.ok) {
+      return response;
+    }
+
+    lastResponse = response;
+
+    if (response.status !== 403) {
+      return response;
+    }
+  }
+
+  return lastResponse;
 }
 
 function validateProductJsonUrl(productJsonUrl) {
