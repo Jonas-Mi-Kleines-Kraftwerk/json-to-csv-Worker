@@ -1,19 +1,36 @@
 # JSON to live CSV Worker
 
-Cloudflare Worker, der Shopify-Produkt-JSON live als CSV ausgibt.
+Cloudflare Worker, der Shopify-Produkt-JSON live als CSV ausgibt und auf der Startseite ein kleines Dashboard bereitstellt.
 
-## Default-Aufruf
+## Startseite
 
-Ohne Query-Parameter wird diese URL verwendet:
+Die Root-URL zeigt ein Dashboard mit:
+
+- Eingabefeld fuer eine oder mehrere Shopify-Produkt-JSON-URLs
+- Vorschau-Button
+- Download-Button fuer die CSV
+- direkter Anzeige der generierten Feed-URL
+
+Ohne Eingabe wird diese Standard-URL verwendet:
 
 `https://kleineskraftwerk.de/products/deal-kleines-kraftwerk-xl-2000wp-quattro-mit-optionaler-halterung-und-anker-solarbank-3-e2700-pro.json`
 
-## Mehrere Produkte
+## Direkter CSV-Feed
 
-Mehrere Shopify-Produkt-JSON-URLs kannst du per `url`-Parameter übergeben:
+Die CSV selbst liegt unter `/feed.csv`.
+
+Beispiel mit einer Produkt-URL:
 
 ```text
-https://DEIN-WORKER.workers.dev/?url=https://shop.de/products/produkt-a.json&url=https://shop.de/products/produkt-b.json
+https://DEIN-WORKER.workers.dev/feed.csv?url=https://shop.de/products/produkt-a.json
 ```
 
-Der Worker antwortet immer mit einer CSV-Datei im Format `text/csv; charset=utf-8`.
+Beispiel mit mehreren Produkt-URLs:
+
+```text
+https://DEIN-WORKER.workers.dev/feed.csv?url=https://shop.de/products/produkt-a.json&url=https://shop.de/products/produkt-b.json
+```
+
+## Vorschau-API
+
+Fuer die Dashboard-Vorschau nutzt der Worker den JSON-Endpunkt `/api/products`.
