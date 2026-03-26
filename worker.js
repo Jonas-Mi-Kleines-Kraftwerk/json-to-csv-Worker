@@ -5,6 +5,8 @@ const PRODUCT_LINK_SUFFIX = "?pub=home-and-smart";
 const CSV_HEADERS = [
   "Product ID",
   "Title",
+  "Variant ID",
+  "Variant Title",
   "SKU",
   "Price",
   "Compare At Price",
@@ -79,7 +81,8 @@ export default {
 
 async function fetchProducts(requestUrl) {
   const productJsonUrls = getProductJsonUrls(requestUrl);
-  return Promise.all(productJsonUrls.map(fetchProduct));
+  const products = await Promise.all(productJsonUrls.map(fetchProduct));
+  return products.flat();
 }
 
 function getProductJsonUrls(requestUrl) {
@@ -105,20 +108,26 @@ async function fetchProduct(productJsonUrl) {
     throw new Error(`Missing product data in ${productJsonUrl}`);
   }
 
-  const firstVariant = product.variants?.[0] ?? {};
   const imageUrl =
     product.image?.src ?? product.images?.[0]?.src ?? product.images?.[0] ?? "";
+  const variants =
+    Array.isArray(product.variants) && product.variants.length > 0
+      ? product.variants
+      : [{}];
 
-  return {
+  return variants.map((variant) => ({
     productId: product.id ?? "",
     title: product.title ?? "",
-    sku: firstVariant.sku ?? "",
-    price: firstVariant.price ?? "",
-    compareAtPrice: firstVariant.compare_at_price ?? "",
+    variantId: variant.id ?? "",
+    variantTitle:
+      variant.title && variant.title !== "Default Title" ? variant.title : "",
+    sku: variant.sku ?? "",
+    price: variant.price ?? "",
+    compareAtPrice: variant.compare_at_price ?? "",
     imageUrl,
     productLink: buildProductLink(productJsonUrl, product),
     sourceJsonUrl: productJsonUrl,
-  };
+  }));
 }
 
 async function fetchShopifyProductJson(productJsonUrl) {
@@ -187,6 +196,8 @@ function toCsv(products) {
     ...products.map((product) => [
       product.productId,
       product.title,
+      product.variantId,
+      product.variantTitle,
       product.sku,
       product.price,
       product.compareAtPrice,
@@ -508,6 +519,7 @@ function renderDashboard(requestUrl, errorMessage = "") {
           .map((product) => \`
             <tr>
               <td>\${escapeHtml(product.title || "")}</td>
+              <td>\${escapeHtml(product.variantTitle || "")}</td>
               <td>\${escapeHtml(product.price || "")}</td>
               <td>\${escapeHtml(product.sku || "")}</td>
             </tr>
@@ -519,6 +531,7 @@ function renderDashboard(requestUrl, errorMessage = "") {
             <thead>
               <tr>
                 <th>Title</th>
+                <th>Variant</th>
                 <th>Price</th>
                 <th>SKU</th>
               </tr>
